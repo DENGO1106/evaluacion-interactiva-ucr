@@ -24,10 +24,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Referencias Vista Usuario
-    const slider = document.getElementById('blindSlider');
-    const submitBtn = document.getElementById('submitBtn');
+// Referencias Vista Usuario
+const slider = document.getElementById('blindSlider');
+const submitBtn = document.getElementById('submitBtn');
     const successMessage = document.getElementById('successMessage');
     const goToAdminBtn = document.getElementById('goToAdminBtn');
     const shotNameInput = document.getElementById('shotName');
@@ -226,4 +225,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializar
     resetSlider();
-});
