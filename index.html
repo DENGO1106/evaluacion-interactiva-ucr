@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Interactiva – UCR</title>
+    <meta name="description" content="Herramienta de evaluación ciega interactiva para el experimento de percepción de sabor – UCR Estadística III.">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container" id="mainContainer">
+
+        <!-- VISTA DE USUARIO -->
+        <div id="userView">
+            <header>
+                <h1>Evaluación</h1>
+                <p>Desliza el control hasta el punto que consideres adecuado.<br>La marca central es la única referencia.</p>
+            </header>
+
+            <main class="evaluation-card">
+                <div class="shot-input-container">
+                    <label for="shotName">Identificador / Shot</label>
+                    <input type="text" id="shotName" placeholder="Ej. Shot 1">
+                </div>
+
+                <div class="slider-container">
+                    <div class="center-mark"></div>
+                    <input type="range" id="blindSlider" min="0" max="10" step="0.0001" value="5" class="blind-slider">
+                </div>
+
+                <div class="actions">
+                    <button id="submitBtn" class="btn-primary">Confirmar Selección</button>
+                </div>
+
+                <div id="successMessage" class="success-msg hidden">
+                    ¡Guardado! Listo para la siguiente evaluación.
+                </div>
+            </main>
+
+            <footer>
+                <button id="goToAdminBtn" class="admin-link" style="background:none; border:none; cursor:pointer; text-decoration:underline; font-family:inherit; font-size:14px; color: #94a3b8; padding: 10px;">Ir a Panel de Administrador</button>
+            </footer>
+        </div>
+
+        <!-- VISTA DE ADMINISTRADOR -->
+        <div id="adminView" style="display: none; width: 100%; display: none; flex-direction: column; align-items: center;">
+            <header>
+                <h1>Panel de Control</h1>
+                <p>Visualización de los valores exactos seleccionados en las evaluaciones ciegas.</p>
+            </header>
+
+            <main class="dashboard-card">
+                <div class="actions-top">
+                    <button id="clearDataBtn" class="btn-danger">Borrar Todos los Datos</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th># Evaluación</th>
+                                <th>Shot / Título</th>
+                                <th>Fecha y Hora</th>
+                                <th>Valor Seleccionado (Exacto)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <!-- Las filas se insertarán con JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="noDataMsg" class="no-data">No hay evaluaciones registradas aún.</div>
+                </div>
+            </main>
+
+            <footer>
+                <button id="goToUserBtn" class="user-link" style="background:none; border:none; cursor:pointer; text-decoration:underline; font-family:inherit; font-size:14px; color: #94a3b8; padding: 10px;">Volver a la Vista de Usuario</button>
+            </footer>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

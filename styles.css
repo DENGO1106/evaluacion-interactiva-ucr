@@ -1,0 +1,445 @@
+html {
+    overflow-x: hidden;
+}
+
+:root {
+    --bg-color: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-color: #3b82f6;
+    --accent-hover: #2563eb;
+    --danger-color: #ef4444;
+    --danger-hover: #dc2828;
+    --success-color: #10b981;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --slider-band: rgba(15, 23, 42, 0.85);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* =============================
+   CONTENEDORES PRINCIPALES
+   ============================= */
+.container {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    overflow-x: hidden;
+}
+
+/* =============================
+   VISTAS (User / Admin)
+   ============================= */
+#userView,
+#adminView {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    overflow-x: hidden;
+}
+
+/* =============================
+   HEADER
+   ============================= */
+header {
+    text-align: center;
+    padding: 2.5rem 2rem 1.5rem;
+    max-width: 600px;
+    width: 100%;
+}
+
+header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* =============================
+   TARJETA DE EVALUACIÓN
+   Rediseñada para acomodar la barra full-width
+   ============================= */
+.evaluation-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: calc(100% - 4rem);
+    max-width: 860px;
+    /* overflow:hidden hace que el slider se clipee a los bordes redondeados
+       y NO genere scroll horizontal que mueva la página */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 2rem 0;
+    margin: 0 auto;  /* centrado absoluto, no depende del flex parent */
+}
+
+/* =============================
+   INPUT DEL SHOT
+   ============================= */
+.shot-input-container {
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.shot-input-container label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.shot-input-container input[type="text"] {
+    padding: 10px 16px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 16px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s, background 0.2s;
+    text-align: center;
+}
+
+.shot-input-container input[type="text"]::placeholder {
+    color: var(--text-secondary);
+}
+
+.shot-input-container input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+/* =============================
+   FRANJA DE LA BARRA DESLIZADORA
+   Se extiende de borde a borde de la tarjeta
+   ============================= */
+.slider-container {
+    position: relative;
+    /* Sangría negativa para que llegue a los bordes del card
+       sin generar overflow externo (el card tiene overflow:hidden) */
+    width: calc(100% + 4rem);
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding: 2rem 3rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.center-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 44px;
+    background-color: var(--text-secondary);
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 3px;
+    opacity: 0.6;
+}
+
+/* Etiquetas de extremos */
+.slider-container::before {
+    content: "Mín";
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.slider-container::after {
+    content: "Máx";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.blind-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.blind-slider:focus {
+    outline: none;
+}
+
+/* Track */
+.blind-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.blind-slider::-moz-range-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Thumb */
+.blind-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 28px;
+    width: 28px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    margin-top: -10px;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.6), 0 0 4px rgba(0,0,0,0.4);
+    transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+    border: 3px solid white;
+}
+
+.blind-slider::-moz-range-thumb {
+    height: 28px;
+    width: 28px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+    transition: transform 0.15s, background 0.2s;
+    border: 3px solid white;
+}
+
+.blind-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    background: var(--accent-hover);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.8);
+}
+.blind-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    background: var(--accent-hover);
+}
+
+/* Estado deshabilitado / bloqueado */
+.blind-slider:disabled::-webkit-slider-thumb {
+    background: #475569;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+.blind-slider:disabled::-moz-range-thumb {
+    background: #475569;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =============================
+   ÁREA DE ACCIONES (dentro de la tarjeta, bajo la barra)
+   ============================= */
+.actions {
+    width: 100%;
+    max-width: 340px;
+    padding: 1.75rem 0 0.5rem;
+}
+
+/* =============================
+   BOTONES
+   ============================= */
+button {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: white;
+    width: 100%;
+    letter-spacing: 0.02em;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:disabled {
+    background-color: #334155;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.btn-danger {
+    background-color: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    border-radius: 10px;
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-color);
+    color: white;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+/* =============================
+   MENSAJES
+   ============================= */
+.success-msg {
+    margin-bottom: 1.5rem;
+    color: var(--success-color);
+    font-weight: 500;
+    font-size: 0.95rem;
+    opacity: 1;
+    transition: opacity 0.4s;
+}
+
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =============================
+   FOOTER
+   ============================= */
+footer {
+    text-align: center;
+    padding: 1.25rem 0 2rem;
+    width: 100%;
+}
+
+footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+footer a:hover {
+    color: var(--text-primary);
+}
+
+/* =============================
+   PANEL ADMINISTRADOR
+   ============================= */
+.dashboard-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: calc(100% - 4rem);
+    max-width: 860px;
+    margin: 0 auto; /* centrado igual que evaluation-card */
+}
+
+.actions-top {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th, td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+td {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+}
+
+.no-data {
+    padding: 2.5rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+}
