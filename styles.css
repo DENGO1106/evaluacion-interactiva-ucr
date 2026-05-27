@@ -351,6 +351,28 @@ button {
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.btn-icon.invalid {
+    opacity: 0.5;
+}
+
 /* =============================
    MENSAJES
    ============================= */
@@ -435,6 +457,12 @@ th {
 td {
     font-variant-numeric: tabular-nums;
     font-size: 0.95rem;
+}
+
+.row-invalid td {
+    text-decoration: line-through;
+    opacity: 0.5;
+    color: var(--text-secondary);
 }
 
 .no-data {

@@ -7,7 +7,10 @@ import {
     query, 
     orderBy, 
     getDocs,
-    writeBatch
+    writeBatch,
+    deleteDoc,
+    updateDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Tu configuración de Firebase
@@ -142,9 +145,14 @@ const submitBtn = document.getElementById('submitBtn');
             resultsBody.innerHTML = '';
 
             let index = 1;
-            snapshot.forEach((doc) => {
-                const evalData = doc.data();
+            snapshot.forEach((documento) => {
+                const evalData = documento.data();
+                const docId = documento.id; // ID único de Firebase
+                
                 const tr = document.createElement('tr');
+                if (evalData.invalid) {
+                    tr.classList.add('row-invalid');
+                }
                 
                 const tdIndex = document.createElement('td');
                 tdIndex.textContent = index++;
@@ -158,10 +166,46 @@ const submitBtn = document.getElementById('submitBtn');
                 const tdValue = document.createElement('td');
                 tdValue.innerHTML = `<strong>${evalData.value}</strong>`;
                 
+                // Columna de Acciones
+                const tdActions = document.createElement('td');
+                
+                // Botón Invalidar
+                const btnInvalidate = document.createElement('button');
+                btnInvalidate.className = 'btn-icon';
+                btnInvalidate.title = evalData.invalid ? "Restaurar como válido" : "Marcar como inválido";
+                btnInvalidate.innerHTML = evalData.invalid ? "✅" : "⚠️";
+                btnInvalidate.onclick = async () => {
+                    try {
+                        const ref = doc(db, "evaluaciones", docId);
+                        await updateDoc(ref, { invalid: !evalData.invalid });
+                    } catch (err) {
+                        alert("Error al actualizar el estado.");
+                    }
+                };
+
+                // Botón Eliminar
+                const btnDelete = document.createElement('button');
+                btnDelete.className = 'btn-icon';
+                btnDelete.title = "Borrar definitivamente";
+                btnDelete.innerHTML = "🗑️";
+                btnDelete.onclick = async () => {
+                    if (confirm(`¿Borrar definitivamente la evaluación "${evalData.shotName}"?`)) {
+                        try {
+                            await deleteDoc(doc(db, "evaluaciones", docId));
+                        } catch (err) {
+                            alert("Error al borrar.");
+                        }
+                    }
+                };
+
+                tdActions.appendChild(btnInvalidate);
+                tdActions.appendChild(btnDelete);
+                
                 tr.appendChild(tdIndex);
                 tr.appendChild(tdShot);
                 tr.appendChild(tdTime);
                 tr.appendChild(tdValue);
+                tr.appendChild(tdActions);
                 
                 resultsBody.appendChild(tr);
             });
