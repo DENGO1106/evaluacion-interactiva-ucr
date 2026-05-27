@@ -1,4 +1,28 @@
-const APPS_SCRIPT_URL = "PEGA_AQUI_TU_URL"; // <-- Reemplaza esto con la URL de tu Web App de Google Apps Script
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    onSnapshot, 
+    query, 
+    orderBy, 
+    getDocs,
+    writeBatch
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// Tu configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyB03Qs1EQ9ALXtQ9am5wM7waZvtE_-tTRM",
+  authDomain: "estadistica-lll.firebaseapp.com",
+  projectId: "estadistica-lll",
+  storageBucket: "estadistica-lll.firebasestorage.app",
+  messagingSenderId: "390500850905",
+  appId: "1:390500850905:web:faa43eb237e9f673e1f2c8"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     // Referencias Vista Usuario
@@ -19,8 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userView = document.getElementById('userView');
     const adminView = document.getElementById('adminView');
 
-    // Estado local para sugerencias
     let lastEvaluations = [];
+    let unsubscribeAdmin = null; // Para la escucha en tiempo real
 
     // --- LÓGICA DE VISTA DE USUARIO ---
     function resetSlider() {
@@ -53,35 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (APPS_SCRIPT_URL === "PEGA_AQUI_TU_URL") {
-            // FALLBACK A LOCALSTORAGE
-            slider.disabled = true;
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Guardando localmente...";
-            
-            const exactValue = slider.value;
-            const timestamp = new Date().toLocaleString('es-CR');
-            
-            const newEvaluation = {
-                id: Date.now(),
-                shotName: shotName,
-                value: exactValue,
-                timestamp: timestamp
-            };
-            
-            let evals = JSON.parse(localStorage.getItem('blind_evaluations') || '[]');
-            evals.push(newEvaluation);
-            localStorage.setItem('blind_evaluations', JSON.stringify(evals));
-            
-            lastEvaluations.push(newEvaluation);
-            successMessage.classList.remove('hidden');
-            setTimeout(() => {
-                successMessage.classList.add('hidden');
-                resetSlider();
-            }, 2000);
-            return;
-        }
-
         // Bloquear temporalmente
         slider.disabled = true;
         submitBtn.disabled = true;
@@ -90,44 +85,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const exactValue = slider.value;
         const timestamp = new Date().toLocaleString('es-CR');
         
-        const newEvaluation = {
-            action: 'add',
-            id: Date.now(),
-            shotName: shotName,
-            value: exactValue,
-            timestamp: timestamp
-        };
-
         try {
-            // Enviar datos a Google Sheets
-            const response = await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                // No 'Content-Type': 'application/json' porque puede fallar con CORS en Apps Script simple
-                // Text/plain evita preflight requests complicados
-                body: JSON.stringify(newEvaluation),
-            });
+            const evalData = {
+                shotName: shotName,
+                value: exactValue,
+                timestamp: timestamp,
+                createdAt: Date.now() // para ordenar
+            };
 
-            const result = await response.json();
+            // Guardar en Firestore
+            await addDoc(collection(db, "evaluaciones"), evalData);
+
+            // Guardar en el estado local para la sugerencia del próximo shot
+            lastEvaluations.push(evalData);
             
-            if (result.status === 'success') {
-                // Guardar en el estado local para la sugerencia del próximo shot
-                lastEvaluations.push(newEvaluation);
-                
-                // Mostrar éxito
-                successMessage.classList.remove('hidden');
+            // Mostrar éxito
+            successMessage.classList.remove('hidden');
 
-                // Resetear después de 2 segundos para la siguiente evaluación
-                setTimeout(() => {
-                    successMessage.classList.add('hidden');
-                    resetSlider();
-                }, 2000);
-            } else {
-                throw new Error("Error del servidor");
-            }
+            // Resetear después de 2 segundos para la siguiente evaluación
+            setTimeout(() => {
+                successMessage.classList.add('hidden');
+                resetSlider();
+            }, 2000);
 
         } catch (error) {
-            console.error("Error guardando:", error);
-            alert("Hubo un error al guardar los datos. Revisa tu conexión a internet.");
+            console.error("Error guardando en Firebase:", error);
+            alert("Hubo un error al guardar los datos en la nube. Revisa tu conexión a internet.");
             submitBtn.disabled = false;
             slider.disabled = false;
             submitBtn.textContent = "Reintentar";
@@ -135,105 +118,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE VISTA DE ADMINISTRADOR ---
-    async function loadAdminData() {
-        if (APPS_SCRIPT_URL === "PEGA_AQUI_TU_URL") {
-            // FALLBACK A LOCALSTORAGE
-            const evals = JSON.parse(localStorage.getItem('blind_evaluations') || '[]');
-            renderTable(evals);
-            return;
-        }
-
-        resultsBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando datos desde Google Sheets...</td></tr>';
+    function initAdminListener() {
+        resultsBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sincronizando con Firebase en tiempo real...</td></tr>';
         noDataMsg.style.display = 'none';
         resultsTable.style.display = 'table';
         clearDataBtn.disabled = true;
 
-        try {
-            const response = await fetch(APPS_SCRIPT_URL);
-            const evaluations = await response.json();
-            clearDataBtn.disabled = false;
-            renderTable(evaluations);
-        } catch (error) {
-            console.error("Error cargando:", error);
-            resultsBody.innerHTML = '';
-            noDataMsg.textContent = "Error al cargar los datos de la nube. Revisa tu conexión a internet o la URL del script.";
-            noDataMsg.style.display = 'block';
-            resultsTable.style.display = 'none';
-        }
-    }
-
-    function renderTable(evaluations) {
-        resultsBody.innerHTML = '';
-        if (!evaluations || evaluations.length === 0) {
-            noDataMsg.textContent = "No hay evaluaciones registradas aún.";
-            noDataMsg.style.display = 'block';
-            resultsTable.style.display = 'none';
-            return;
-        }
+        const q = query(collection(db, "evaluaciones"), orderBy("createdAt", "asc"));
         
-        noDataMsg.style.display = 'none';
-        resultsTable.style.display = 'table';
+        // onSnapshot escucha los cambios en tiempo real automáticamente
+        unsubscribeAdmin = onSnapshot(q, (snapshot) => {
+            clearDataBtn.disabled = false;
+            
+            if (snapshot.empty) {
+                resultsBody.innerHTML = '';
+                noDataMsg.textContent = "No hay evaluaciones registradas aún.";
+                noDataMsg.style.display = 'block';
+                resultsTable.style.display = 'none';
+                return;
+            }
 
-        evaluations.forEach((eval, index) => {
-            const tr = document.createElement('tr');
-            
-            const tdIndex = document.createElement('td');
-            tdIndex.textContent = index + 1;
+            noDataMsg.style.display = 'none';
+            resultsTable.style.display = 'table';
+            resultsBody.innerHTML = '';
 
-            const tdShot = document.createElement('td');
-            tdShot.textContent = eval.shotName || "N/A";
-            
-            const tdTime = document.createElement('td');
-            tdTime.textContent = eval.timestamp;
-            
-            const tdValue = document.createElement('td');
-            tdValue.innerHTML = `<strong>${eval.value}</strong>`;
-            
-            tr.appendChild(tdIndex);
-            tr.appendChild(tdShot);
-            tr.appendChild(tdTime);
-            tr.appendChild(tdValue);
-            
-            resultsBody.appendChild(tr);
+            let index = 1;
+            snapshot.forEach((doc) => {
+                const evalData = doc.data();
+                const tr = document.createElement('tr');
+                
+                const tdIndex = document.createElement('td');
+                tdIndex.textContent = index++;
+
+                const tdShot = document.createElement('td');
+                tdShot.textContent = evalData.shotName || "N/A";
+                
+                const tdTime = document.createElement('td');
+                tdTime.textContent = evalData.timestamp;
+                
+                const tdValue = document.createElement('td');
+                tdValue.innerHTML = `<strong>${evalData.value}</strong>`;
+                
+                tr.appendChild(tdIndex);
+                tr.appendChild(tdShot);
+                tr.appendChild(tdTime);
+                tr.appendChild(tdValue);
+                
+                resultsBody.appendChild(tr);
+            });
+        }, (error) => {
+            console.error("Error cargando de Firebase:", error);
+            resultsBody.innerHTML = '';
+            noDataMsg.textContent = "Error al cargar los datos. Esto podría ser por los permisos de la base de datos de Firebase.";
+            noDataMsg.style.display = 'block';
+            resultsTable.style.display = 'none';
         });
     }
 
     clearDataBtn.addEventListener('click', async () => {
-        const msg = APPS_SCRIPT_URL === "PEGA_AQUI_TU_URL" 
-            ? '¿Estás seguro de que quieres borrar TODAS las evaluaciones locales? Esta acción no se puede deshacer.'
-            : '¿Estás seguro de que quieres borrar TODAS las evaluaciones de la nube? Esta acción no se puede deshacer.';
-            
-        if (confirm(msg)) {
+        if (confirm('¿Estás seguro de que quieres borrar TODAS las evaluaciones de la nube? Esta acción no se puede deshacer.')) {
             clearDataBtn.disabled = true;
-            clearDataBtn.textContent = "Borrando...";
-
-            if (APPS_SCRIPT_URL === "PEGA_AQUI_TU_URL") {
-                // FALLBACK
-                localStorage.removeItem('blind_evaluations');
-                lastEvaluations = [];
-                loadAdminData();
-                clearDataBtn.textContent = "Borrar Todos los Datos";
-                clearDataBtn.disabled = false;
-                return;
-            }
+            clearDataBtn.textContent = "Borrando nube...";
 
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'clear' }),
+                // Para borrar todo, obtenemos los documentos y borramos uno por uno (batch)
+                const snapshot = await getDocs(collection(db, "evaluaciones"));
+                const batch = writeBatch(db);
+                
+                snapshot.docs.forEach((doc) => {
+                    batch.delete(doc.ref);
                 });
 
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    lastEvaluations = []; // limpiar estado local también
-                    loadAdminData();
-                } else {
-                    throw new Error("Error del servidor");
-                }
+                await batch.commit();
+                lastEvaluations = []; 
+                // La tabla se vaciará sola gracias a onSnapshot
             } catch (error) {
                 console.error("Error borrando:", error);
-                alert("Error al intentar borrar los datos.");
+                alert("Error al intentar borrar los datos de Firebase.");
             } finally {
                 clearDataBtn.textContent = "Borrar Todos los Datos";
                 clearDataBtn.disabled = false;
@@ -246,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = prompt("Ingrese la contraseña de administrador:");
         if (password === "123456") {
             userView.style.display = 'none';
-            adminView.style.display = 'flex'; // Ajustado al flex del CSS nuevo
-            loadAdminData(); // Cargar datos al entrar al panel
+            adminView.style.display = 'flex';
+            initAdminListener(); // Inicia la escucha en tiempo real
         } else if (password !== null) {
             alert("Contraseña incorrecta.");
         }
@@ -255,7 +216,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     goToUserBtn.addEventListener('click', () => {
         adminView.style.display = 'none';
-        userView.style.display = 'flex'; // Ajustado al flex del CSS nuevo
+        userView.style.display = 'flex';
+        // Apagamos el listener para no gastar lecturas cuando no estamos en la vista admin
+        if (unsubscribeAdmin) {
+            unsubscribeAdmin();
+            unsubscribeAdmin = null;
+        }
     });
 
     // Inicializar
