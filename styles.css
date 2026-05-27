@@ -443,3 +443,49 @@ td {
     text-align: center;
     font-style: italic;
 }
+
+/* =============================
+   ADAPTACIÓN PARA MÓVILES
+   ============================= */
+@media (max-width: 600px) {
+    header {
+        padding: 1.5rem 1rem 1rem;
+    }
+    header h1 {
+        font-size: 1.6rem;
+    }
+    .evaluation-card, .dashboard-card {
+        width: calc(100% - 2rem);
+        padding: 1.5rem 1rem 0;
+        border-radius: 16px;
+    }
+    .slider-container {
+        width: calc(100% + 2rem);
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding: 2rem 1.5rem;
+    }
+    .blind-slider::-webkit-slider-thumb {
+        width: 34px; /* Más grande para facilitar el toque con el dedo */
+        height: 34px;
+        margin-top: -13px;
+    }
+    .blind-slider::-moz-range-thumb {
+        width: 34px;
+        height: 34px;
+    }
+    .shot-input-container input[type="text"] {
+        font-size: 16px; /* Mínimo 16px para evitar el zoom automático en iOS */
+        padding: 12px 16px;
+    }
+    .actions {
+        padding: 1.5rem 0 0.5rem;
+    }
+    th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    td {
+        font-size: 0.85rem;
+    }
+}
